@@ -1,0 +1,11 @@
+node_modules
+vendor
+.git
+.next
+.cache
+.vscode
+.data
+development-compose.yml
+staging-compose.yml
+production-compose.yml
+Dockerfile
