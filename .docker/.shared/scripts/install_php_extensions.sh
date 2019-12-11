@@ -16,5 +16,6 @@ chmod uga+x /usr/local/bin/install-php-extensions && sync && install-php-extensi
     gd \
     exif \
     intl \
+    redis \
     xdebug \
 ;
