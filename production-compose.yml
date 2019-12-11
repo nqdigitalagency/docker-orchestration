@@ -28,8 +28,7 @@ services:
         - "traefik.http.routers.api.entrypoints=web"
         - "traefik.http.services.api.loadbalancer.server.port=80"
 
-
-  php-fpm:
+  php-fpm: &php-base
     image: nqda/php
     environment:
       - DB_HOST=${MYSQL_HOST}
@@ -63,6 +62,11 @@ services:
       lan:
         aliases:
           - php-fpm
+
+  queues:
+    <<: *php-base
+    restart: unless-stopped
+    command: bash -c "php artisan queue:work"
 
   mysql:
     image: nqda/mysql

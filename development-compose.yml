@@ -28,7 +28,7 @@ services:
         aliases:
           - ${APP_HOST}
 
-  php-fpm:
+  php-fpm: &php-base
     image: ${COMPOSE_PROJECT_NAME}-infra-php-fpm
     container_name: ${COMPOSE_PROJECT_NAME}-php-container
     build:
@@ -73,6 +73,12 @@ services:
     networks:
       - lan
 
+  queues:
+    <<: *php-base
+    container_name: ${COMPOSE_PROJECT_NAME}-queues
+    restart: unless-stopped
+    command: bash -c "php artisan queue:work"
+    
   mysql:
     image: ${COMPOSE_PROJECT_NAME}-infra-mysql
     container_name: ${COMPOSE_PROJECT_NAME}-mysql-container

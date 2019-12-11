@@ -26,6 +26,8 @@ RUN apt-get update -yqq && apt-get install -yqq openssh-server \
  && mkdir /var/run/sshd \
 ;
 
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
 # add default public key to authorized_keys
 USER ${APP_USER}
 COPY ${SERVICE_DIR}/.ssh/insecure_id_rsa.pub /tmp/insecure_id_rsa.pub
