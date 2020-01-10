@@ -18,4 +18,5 @@ chmod uga+x /usr/local/bin/install-php-extensions && sync && install-php-extensi
     intl \
     redis \
     xdebug \
+    zip \
 ;
