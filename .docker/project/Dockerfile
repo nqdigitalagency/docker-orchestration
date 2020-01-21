@@ -1,7 +1,8 @@
 ARG TARGET_PHP_VERSION=7.3
 FROM php:${TARGET_PHP_VERSION}-fpm
 
-ARG SERVICE_DIR="./.docker/php-fpm"
+ARG SERVICE_DIR="./.docker/project"
+ARG SERVICE_DIR_PHP="./.docker/php-fpm"
 COPY ./.docker/.shared/scripts/ /tmp/scripts/
 RUN chmod +x -R /tmp/scripts/
 
@@ -23,31 +24,11 @@ RUN /tmp/scripts/install_software.sh
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Install Phalcon
-#ARG PHALCON_VERSION=v3.4.5
-#WORKDIR /usr/local/src
-#RUN git clone https://github.com/phalcon/cphalcon.git --branch "$PHALCON_VERSION" --single-branch
-#WORKDIR /usr/local/src/cphalcon/build
-#RUN ./install
-
-# Install wkhtmltopdf
-RUN apt-get -yqq install fontconfig libxrender1 xfonts-75dpi xfonts-base
-RUN wget https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb
-RUN dpkg -i wkhtmltox_0.12.5-1.buster_amd64.deb
-RUN rm wkhtmltox_0.12.5-1.buster_amd64.deb
-
-# Install Microsoft fonts
-RUN apt-get install -yqq cabextract
-RUN wget http://ftp.es.debian.org/debian/pool/contrib/m/msttcorefonts/ttf-mscorefonts-installer_3.7_all.deb
-RUN dpkg -i ttf-mscorefonts-installer_3.7_all.deb
-RUN rm ttf-mscorefonts-installer_3.7_all.deb
-
-
 # php config
 COPY ./.docker/.shared/config/php/conf.d/*  /usr/local/etc/php/conf.d/
 
 # php-fpm pool config
-COPY ${SERVICE_DIR}/php-fpm.d/* /usr/local/etc/php-fpm.d
+COPY ${SERVICE_DIR_PHP}/php-fpm.d/* /usr/local/etc/php-fpm.d
 RUN /tmp/scripts/modify_config.sh /usr/local/etc/php-fpm.d/zz-app.conf \
     "__APP_USER" \
     "${APP_USER}" \
@@ -57,8 +38,16 @@ RUN /tmp/scripts/modify_config.sh /usr/local/etc/php-fpm.d/zz-app.conf \
 ;
 
 # workdir
+ARG APP_CODE_PATH_HOST=./
 ARG APP_CODE_PATH="/var/www/html"
 WORKDIR "$APP_CODE_PATH"
+
+USER www-data
+
+COPY --chown=www-data:www-data . $APP_CODE_PATH/
+COPY --chown=www-data:www-data .env.example $APP_CODE_PATH/.env
+
+RUN composer install --no-interaction --no-progress --no-dev;
 
 # entrypoint
 RUN mkdir -p /bin/docker-entrypoint/ \
@@ -67,6 +56,3 @@ RUN mkdir -p /bin/docker-entrypoint/ \
 ;
 
 RUN /tmp/scripts/cleanup.sh
-#
-#ENTRYPOINT ["/bin/docker-entrypoint/resolve-docker-host-ip.sh", "php-fpm"]
-EXPOSE 9000

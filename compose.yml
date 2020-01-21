@@ -1,0 +1,107 @@
+version: '3.7'
+
+networks:
+  lan:
+    driver: overlay
+
+services:
+  nginx:
+    image: nqda/nginx
+    volumes:
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}
+    networks:
+      - lan
+    deploy:
+      mode: replicated
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  php-fpm: &php-base
+    image: nqda/php
+    environment:
+      - DB_HOST=${MYSQL_HOST}
+      - DB_PORT=${MYSQL_PORT}
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - APP_NAME=${LARAVEL_APP_NAME}
+      - APP_ENV=${LARAVEL_APP_ENV}
+      - APP_KEY=${LARAVEL_APP_KEY}
+      - APP_DEBUG=${LARAVEL_APP_DEBUG}
+      - APP_URL=${LARAVEL_APP_URL}
+      - LOG_CHANNEL=${LARAVEL_LOG_CHANNEL}
+      - BROADCAST_DRIVER=${LARAVEL_BROADCAST_DRIVER}
+      - CACHE_DRIVER=${LARAVEL_CACHE_DRIVER}
+      - QUEUE_CONNECTION=${LARAVEL_QUEUE_CONNECTION}
+      - SESSION_DRIVER=${LARAVEL_SESSION_DRIVER}
+      - SESSION_LIFETIME=${LARAVEL_SESSION_LIFETIME}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - MAIL_DRIVER=${LARAVEL_MAIL_DRIVER}
+      - MAIL_HOST=${LARAVEL_MAIL_HOST}
+      - MAIL_PORT=${LARAVEL_MAIL_PORT}
+      - MAIL_USERNAME=${LARAVEL_MAIL_USERNAME}
+      - MAIL_PASSWORD=${LARAVEL_MAIL_PASSWORD}
+      - MAIL_ENCRYPTION=${LARAVEL_MAIL_ENCRYPTION}
+    volumes:
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}
+    networks:
+      lan:
+        aliases:
+          - php-fpm
+
+  queues:
+    <<: *php-base
+    restart: unless-stopped
+    command: bash -c "php artisan queue:work"
+
+  mysql:
+    image: nqda/mysql
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${DATA_PATH_HOST}/mysql:/var/lib/mysql
+      - ${MYSQL_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
+    networks:
+      - lan
+
+  redis:
+      image: redis:alpine
+      volumes:
+        - ${DATA_PATH_HOST}/redis:/data/redis
+      networks:
+        - lan
+
+  project:
+    image: registry.gitlab.com/<link>:latest
+    environment:
+      - DB_HOST=${MYSQL_HOST}
+      - DB_PORT=${MYSQL_PORT}
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - APP_NAME=${LARAVEL_APP_NAME}
+      - APP_ENV=${LARAVEL_APP_ENV}
+      - APP_KEY=${LARAVEL_APP_KEY}
+      - APP_DEBUG=${LARAVEL_APP_DEBUG}
+      - APP_URL=${LARAVEL_APP_URL}
+      - APP_CODE_PATH=${APP_CODE_PATH_CONTAINER}
+      - APP_GROUP=${APP_GROUP}
+      - APP_GROUP_ID=${APP_GROUP_ID}
+      - APP_USER=${APP_USER}
+      - APP_USER_ID=${APP_USER_ID}
+      - TARGET_PHP_VERSION=${PHP_VERSION}
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}
+    networks:
+      - lan
