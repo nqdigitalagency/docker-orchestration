@@ -4,6 +4,7 @@ apt-get update -yqq && apt-get install -yqq \
     build-essential \
     apt-transport-https \
     ca-certificates \
+    iproute2 \
     curl \
     cmake \
     dnsutils \

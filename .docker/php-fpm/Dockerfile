@@ -67,6 +67,7 @@ RUN mkdir -p /bin/docker-entrypoint/ \
 ;
 
 RUN /tmp/scripts/cleanup.sh
-#
-#ENTRYPOINT ["/bin/docker-entrypoint/resolve-docker-host-ip.sh", "php-fpm"]
+
+CMD ["php-fpm"]
+ENTRYPOINT ["/bin/docker-entrypoint/resolve-docker-host-ip.sh"]
 EXPOSE 9000
